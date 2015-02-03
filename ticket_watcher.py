@@ -19,7 +19,7 @@ except ImportError:
 parser = argparse.ArgumentParser(description='Ticket watcher beta',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog='''Examples:
-   $ python timezone.py -l login -p password
+   $ python ticket_watcher.py -l login -p password
   ''')
 parser.add_argument("--login", "-l", type=str, help="Login")
 parser.add_argument("--password", "-p", type=str, help="Password")
