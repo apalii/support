@@ -4,14 +4,18 @@
 import os
 import sys
 import time
-import urllib2
 import argparse
 import datetime
 import webbrowser
 try:
+    import urllib2
+except:
+    import urllib.request as urllib2
+try:
     from gi.repository import Notify
 except ImportError:
     print('Please install sudo apt-get install python3-gi')
+    sys.exit(1)
 try:
     import requests
 except ImportError:
@@ -90,15 +94,15 @@ def get_weather():
     data = requests.get(yql_url).json()
     if pargs.debug:
         print(yql_url)
-        print data
+        print(data)
     forecast = data['query']['results']['channel']['item']['condition']
-    return 'Yahoo forecast : {}C {}'.format(forecast['temp'], forecast['text'])
+    return 'Yahoo forecast : {}C  {}'.format(forecast['temp'], forecast['text'])
 
 
 def vk_message(userid, message):
     '''This func sends message to appropriate user via vk.com
     '''
-    token = 'ab12714294fb9e626baea03df58b7c47c4e7d401aa79e28ca6ecb9fc6eb0d76827d46283e269fef6fd99f'
+    token = 'ab12714294fb9e626baea03df58b7c47c4e7d401aa79e28ca6ecb9fc6eb0d7'
     vk_url = 'https://api.vk.com/method/messages.send?user_id='
     message = urllib2.quote(message)
     url = vk_url + '{}&message={}&access_token={}'.format(userid, message, token)
