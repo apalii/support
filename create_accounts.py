@@ -37,6 +37,8 @@ parser.add_argument("--login", "-l", type=str, required=True, dest="login",
                     help="login from WI")
 parser.add_argument("--password", "-p", type=str, required=True, dest="password",
                     help="password from WI")
+parser.add_argument("--number", "-n", type=int, dest="number",
+                    help="Number of accounts. Default 5000")
 parser.add_argument("--product", type=str,
                     default='zzzPortaTestProduct', dest="product",
                     help="default value is zzzPortaTestProduct", )
@@ -89,8 +91,11 @@ def add_customer():
     url = url.replace("'", '"').replace(" ", "")
     if pargs.debug:
         print url
-    page = urllib2.urlopen(url)
-    data = json.load(page)
+    try: 
+        page = urllib2.urlopen(url)
+        data = json.load(page)
+    except:
+        print "It seems that {} already exists".format("zzzPortaSIPPerfTestCustomer")
     print 'Customer(i_customer : {}) was created'.format(data['i_customer'])
     return data['i_customer'].encode('utf-8')
 
@@ -182,6 +187,7 @@ if __name__ == "__main__":
     env       = pargs.env
     login     = pargs.login
     password  = pargs.password
+    PATH_TO_CONFS = '/home/porta-one/SIP_perf_test/csv/'
 
     if not pargs.cleanup:
         print 'Authentification, please wait...'
@@ -194,7 +200,7 @@ if __name__ == "__main__":
         i_cust    = add_customer()
         time.sleep(2)
         print 'Accounts creation, please wait...'
-        acc_list = [str(999000330000 + i) for i in xrange(1, 5000)]
+        acc_list = [str(999000330000 + i) for i in xrange(1, pargs.number)]
         acc_list.insert(0, '999000330000')
 
         with open('i_account.log', 'w') as term_file:
@@ -203,25 +209,6 @@ if __name__ == "__main__":
                 term_file.write(add_account(acc) + '\n')
         print 'i_account.log created. Now cleanup is possible.'
 
-        ''' File creation part. Examples :
-        $ head -3 calls/users.csv
-        SEQUENTIAL
-        999000330001;[authentication username=999000330001 password=];999000330011
-        999000330002;[authentication username=999000330002 password=];999000330012
-        --------------------------------------------------------------------------
-        $ head -3 calls_rtp/users.csv
-        SEQUENTIAL
-        999000330001;[authentication username=999000330001 password=];999000330011
-        999000330002;[authentication username=999000330002 password=];999000330012
-        --------------------------------------------------------------------------
-        head -3 registration/users.csv
-        SEQUENTIAL
-        sipp;1;999000330000;[authentication username=999000330000 password=]
-        sipp;2;999000330001;[authentication username=999000330001 password=]
-        --------------------------------------------------------------------------
-        '''
-
-        PATH_TO_CONFS = '/home/porta-one/SIP_perf_test/csv/'
         with open(PATH_TO_CONFS + 'users_reg.csv', 'w') as reg_file:
             for acc in acc_list:
                 line = 'sipp;1;{a};[authentication username={a} password=p1$ecr3t]'.format(a=acc)
