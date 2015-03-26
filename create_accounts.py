@@ -37,7 +37,7 @@ parser.add_argument("--login", "-l", type=str, required=True, dest="login",
                     help="login from WI")
 parser.add_argument("--password", "-p", type=str, required=True, dest="password",
                     help="password from WI")
-parser.add_argument("--number", "-n", type=int, dest="number",
+parser.add_argument("--number", "-n", type=int, dest="number", default=5000,
                     help="Number of accounts. Default 5000")
 parser.add_argument("--product", type=str,
                     default='zzzPortaTestProduct', dest="product",
