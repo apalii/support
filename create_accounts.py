@@ -165,7 +165,7 @@ def term_account(acc_id):
 
 
 def term_customer(c_id):
-    """terminating account"""
+    """terminating customer"""
     params = {}
     params['i_customer'] = c_id
     url = '{}/Customer/terminate_customer/{}/{}'.format(server, auth, params)
@@ -211,12 +211,14 @@ if __name__ == "__main__":
         print 'i_account.log created. Now cleanup is possible.'
 
         with open(PATH_TO_CONFS + 'users_reg.csv', 'w') as reg_file:
+            reg_file.write('SEQUENTIAL' + '\n') 
             for acc in acc_list:
                 line = 'sipp;1;{a};[authentication username={a} password=p1$ecr3t]'.format(a=acc)
                 reg_file.write(line + '\n')
         print 'users_reg.csv created'
 
         with open(PATH_TO_CONFS + 'users_call.csv', 'w') as calls_file:
+            calls_file.write('SEQUENTIAL' + '\n')
             while len(acc_list):
                 caller, callee = acc_list.pop(), acc_list.pop()
                 line = '{a};[authentication username={a} password=p1$ecr3t];{b}'.format(a=caller, b=callee)
@@ -227,10 +229,10 @@ if __name__ == "__main__":
         to_term = []
         auth    = auth_info()
         with open('i_account.log') as term_file:
-            for line in term_file:
-                to_term.append(line.strip())
-        print 'Accounts termination ...'
-        for acc_id in to_term[1:]:
-            term_account(acc_id)
+            #for line in term_file:
+                #to_term.append(line.strip())
+        #print 'Accounts termination ...'
+        #for acc_id in to_term[1:]:
+            #term_account(acc_id)
         print 'Customer termination ...'
         term_customer(to_term[0])
