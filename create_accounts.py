@@ -96,6 +96,7 @@ def add_customer():
         data = json.load(page)
     except:
         print "It seems that {} already exists".format("zzzPortaSIPPerfTestCustomer")
+        sys.exit(1)
     print 'Customer(i_customer : {}) was created'.format(data['i_customer'])
     return data['i_customer'].encode('utf-8')
 
@@ -193,7 +194,7 @@ if __name__ == "__main__":
         print 'Authentification, please wait...'
         auth      = auth_info()
         time.sleep(2)
-        print 'Cheking zzzPortaTestProduct...'
+        print 'Cheking {} product...'.format(pargs.product)
         i_product = get_i_product(pargs.product)
         time.sleep(2)
         print 'Customer creation, please wait...'
