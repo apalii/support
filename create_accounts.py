@@ -6,15 +6,17 @@ import sys
 import json
 import time
 import urllib2
+import os
+import subprocess
 from datetime import datetime
 try :
     import argparse
 except ImportError:
     print 'use python2.7 or install argparse module'
     sys.exit(1)
-"""
+
 parser = argparse.ArgumentParser(description='Account Generator v.1.00')
-parser = argparse.ArgumentParser(description="Account Generator",
+"""parser = argparse.ArgumentParser(description="Account Generator",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog='''
     Examples:
@@ -46,7 +48,7 @@ parser.add_argument("--product", type=str,
 parser.add_argument("--debug", action='store_true',
                     help="shows a lot of additional information")
 parser.add_argument("--cleanup", action='store_true', help="Cleanup")
-parser.add_argument("--mr45", action='store_true', help="For MR 45 and lower")
+# parser.add_argument("--mr45", action='store_true', help="For MR 45 and lower")
 
 class MyArgs(object):
     '''This simple class just imitates an argsparse
@@ -61,18 +63,18 @@ class MyArgs(object):
     def debug(self):
         print("Parameters are the following :")
         for key, value in self.__dict__.items():
-            print("key : {:<15} value : {:<10}  {}".format(key, value, type(value)))
+            print("key : {:<20} value : {:<10}  {}".format(key, value, type(value)))
 
             
 def conf_reader():
     '''This simple function reads the config and 
        returns a dict with parameters for a class
     ''' 
-    config = '/home/apalii/Desktop/GIT/support/sipperftest.conf'
+    config = '/home/porta-one/SIP_perf_test/etc/sipperftest.conf'
     params = {}
     pre_list = []
     valid = ('server', 'login', 'password', 
-             'environment', 'product', 'mr45', 
+             'environment', 'product',
              'number_of_accounts',
              'customer_name', 'first_account_number',
              'account_password', 'currency')
@@ -88,7 +90,7 @@ def conf_reader():
                         sys.exit(1)
                     if key not in valid:
                         print "Unknown parameter : '{}'  skipped.".format(key)
-                    else: 
+                    else:
                         params[key] = value
                 else:
                     continue
@@ -97,13 +99,19 @@ def conf_reader():
         mr_str = subprocess.Popen(mr_grep, shell=True, stdout=subprocess.PIPE).stdout.read().rstrip()
         # Expected value: 40.3
         mr = int(mr_str.split('.')[0])
-        params[mr45] = True if mr >= 45 else False
+        params['mr45'] = True if mr >= 45 else False
     else:
         print 'Error : there is no {} file !'.format(config)
         sys.exit(1)
-    if not len(valid) == len(params):
+    # All paremeter should be equeal to len of "valid" list 
+    if not len(valid) == len(params) - 1:
         print "Some parameter is missing or extra exists.\nPlease check conf file"
         print valid
+        print params
+        sys.exit(1)
+    if int(params['number_of_accounts']) % 2 != 0:
+        print "Number of accounts should be even number"
+        print "Recheck number_of_accounts parameter in config file"
         sys.exit(1)
 
     return params
@@ -125,7 +133,7 @@ def auth_info():
     """registration
     :rtype : str
     """
-    if pargs.mr45:
+    if not pargs.mr45:
         url = server + '/Session/login/{"login":"' + login + '","password":"' + password + '"}'
     else:
         url = server + '/Session/login/{}/{"login":"' + login + '","password":"' + password + '"}'
@@ -146,10 +154,10 @@ def auth_info():
 
 def add_customer(cust_name, currency):
     """add_customer method"""
-
+    login = cust_name + '_' + str(time.time()).split('.')[0]
     params = {"customer_info":{}}
     params["customer_info"]["name"]             = cust_name
-    params["customer_info"]["login"]            = "cust_name"
+    params["customer_info"]["login"]            = login
     params["customer_info"]["i_customer_type"]  = "1"
     params["customer_info"]["i_parent"]         = "0"
     params["customer_info"]["iso_4217"]         = currency
@@ -188,7 +196,7 @@ def get_i_product(product):
         print "Successfully got i_product"
     except:
         print "Can't find {} product.\nExiting...".format(product)
-        print "Please use --product parameter"
+        print "Please correct 'product' parameter"
         sys.exit(1)
 
 
@@ -254,12 +262,12 @@ def term_customer(c_id):
 
 if __name__ == "__main__":
     # Globals
-    server    = 'https://' + pargs.serv + '/rest'
+    server    = 'https://' + pargs.server + '/rest'
     env       = pargs.environment
     login     = pargs.login
     password  = pargs.password
     PATH_TO_CONFS = '/home/porta-one/SIP_perf_test/csv/'
-    PATH_TO_LOG   = '/porta_var/temp/i_customer.log'
+    PATH_TO_LOG   = '/porta_var/tmp/i_customer.log'
 
     if not pargs2.cleanup:
         print 'Authentification, please wait...'
@@ -268,21 +276,20 @@ if __name__ == "__main__":
         print 'Cheking {} product...'.format(pargs.product)
         i_product = get_i_product(pargs.product)
         time.sleep(2)
+
         print 'Customer creation, please wait...'
         i_cust    = add_customer(pargs.customer_name, pargs.currency)
         time.sleep(2)
-
-        print 'Accounts creation, please wait...'
-        acc_list = [str(999000330000 + i) for i in xrange(1, pargs.number_of_accounts)]
-        acc_list.insert(0, '999000330000')
-        for acc in acc_list:
-            add_account(acc, pargs.currency, pargs.account_password)
-
-
         with open(PATH_TO_LOG, 'w') as term_file:
             term_file.write('Do not remove this file'+ '\n')
             term_file.write(i_cust + '\n')
-        print 'i_account.log created. Now cleanup is possible.'
+        print 'i_customer.log created. Now --cleanup is possible.'
+        
+        print 'Accounts creation, please wait...'
+        acc_list = [str(999000330000 + i) for i in xrange(1, int(pargs.number_of_accounts))]
+        acc_list.insert(0, '999000330000')
+        for acc in acc_list:
+            add_account(acc, pargs.currency, pargs.account_password)
 
         with open(PATH_TO_CONFS + 'users_reg.csv', 'w') as reg_file:
             reg_file.write('SEQUENTIAL' + '\n') 
