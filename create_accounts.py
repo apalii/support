@@ -2,17 +2,22 @@
 
 __author__ = 'apalii'
 
+import os
+import re
 import sys
 import json
 import time
 import urllib2
-import os
-import subprocess
 from datetime import datetime
 try :
     import argparse
 except ImportError:
     print 'use python2.7 or install argparse module'
+    sys.exit(1)
+
+# root-level privileges check
+if os.geteuid() !=0:
+    print "You need to have root privileges to run this script"
     sys.exit(1)
 
 parser = argparse.ArgumentParser(description='Account Generator v.2.00')
@@ -66,11 +71,9 @@ def conf_reader():
                 else:
                     continue
         # Checking MR version
-        mr_grep = "rpm -q --queryformat '%{VERSION}' porta-common"
-        mr_str = subprocess.Popen(mr_grep, shell=True, stdout=subprocess.PIPE).stdout.read().rstrip()
-        # Expected value: 40.3
-        mr = int(mr_str.split('.')[0])
-        params['mr45'] = True if mr >= 45 else False
+        mr_pattern = re.compile(r'MR(\d+)\.\d{1}')
+        mr = re.findall(mr_pattern, os.environ['PS1'])[0]
+        params['mr45'] = True if int(mr) >= 45 else False
     else:
         print 'Error : there is no {} file !'.format(config)
         sys.exit(1)
@@ -224,7 +227,7 @@ def gen_accounts(start_id, number, currency, password):
         print url
     try:   
         page = urllib2.urlopen(url)
-        data = json.load(page))
+        data = json.load(page)
     except:
         print 'smth goes wrong - please check gen_accounts method'
         sys.exit(1)
@@ -277,10 +280,11 @@ if __name__ == "__main__":
         print 'i_customer.log created. Now --cleanup is possible.'
         
         print 'Accounts creation, please wait...'
-        if pargs.mr45:
-            acc_list = [pargs.first_account_number + i) for i in xrange(1, int(pargs.number_of_accounts))]
-            acc_list.insert(0, pargs.first_account_number)
-            # Should we use account generator or not
+        
+        acc_list = [str(int(pargs.first_account_number + i) for i in xrange(1, int(pargs.number_of_accounts))]
+        acc_list.insert(0, pargs.first_account_number)
+        # Should we use account generator or not
+        if not pargs.mr45:
             for acc in acc_list:
                 add_account(acc, pargs.currency, pargs.account_password)
         else:
