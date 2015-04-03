@@ -15,36 +15,7 @@ except ImportError:
     print 'use python2.7 or install argparse module'
     sys.exit(1)
 
-parser = argparse.ArgumentParser(description='Account Generator v.1.00')
-"""parser = argparse.ArgumentParser(description="Account Generator",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog='''
-    Examples:
-
-    1) Test customer and accounts creation :
-    ./create_accounts.py -s 192.168.197.100 -e 3 -l porta-support -p b0neynem --product zzzPortaTestProduct
-
-    2) For MR45 and lower:
-    ./create_accounts.py -s 192.168.197.100 -e 3 -l porta-support -p b0neynem --mr45
-
-    3) Test customer and accounts termination:
-    ./create_accounts.py -s 192.168.197.100 -e 3 -l porta-support -p b0neynem --cleanup
-  ''')
-
-parser.add_argument("--server", "-s", type=str, required=True, dest="serv",
-                    help="IP address of the web server")
-parser.add_argument("--env", "-e", type=str, required=True, dest="env",
-                    help="approptiate i_env")
-parser.add_argument("--login", "-l", type=str, required=True, dest="login",
-                    help="login from WI")
-parser.add_argument("--password", "-p", type=str, required=True, dest="password",
-                    help="password from WI")
-parser.add_argument("--number", "-n", type=int, dest="number", default=5000,
-                    help="Number of accounts. Default 5000")
-parser.add_argument("--product", type=str,
-                    default='zzzPortaTestProduct', dest="product",
-                    help="default value is zzzPortaTestProduct", )
-"""
+parser = argparse.ArgumentParser(description='Account Generator v.2.00')
 parser.add_argument("--debug", action='store_true',
                     help="shows a lot of additional information")
 parser.add_argument("--cleanup", action='store_true', help="Cleanup")
@@ -94,7 +65,7 @@ def conf_reader():
                         params[key] = value
                 else:
                     continue
-        # Checking MR version 
+        # Checking MR version
         mr_grep = "rpm -q --queryformat '%{VERSION}' porta-common"
         mr_str = subprocess.Popen(mr_grep, shell=True, stdout=subprocess.PIPE).stdout.read().rstrip()
         # Expected value: 40.3
@@ -216,31 +187,51 @@ def add_account(acc_id, currency, password):
 
     url = '{}/Account/add_account/{}/{}'.format(server, auth, params)
     url = url.replace("'", '"').replace(" ", "")
-    print url
+    if pargs2.debug:
+        print url
     page = urllib2.urlopen(url)
     data = json.load(page)
     return data['i_account']
 
-# ------------------------------------------------
-# Part of termination
-# term_account is excess, will be removed
-def term_account(acc_id):
-    """terminating account"""
+
+def gen_accounts(start_id, number, currency, password):
+    '''Account generator method
+    Example of the request:   
+    https://192.168.197.100/rest/Account/generate_accounts/
+    {"i_env":"3","session_id":"3b936b79add6acab3749bced0e86f041"}
+    /{"batch":"sipperftest", "gen_method":"S","gen_start_id":"999000339000","gen_amount":"10",
+    "credit_limit":"10.00000","i_product":"3","iso_4217":"USD","activation_date":"2015-04-03",
+    "i_customer":"208","billing_model":"1","h323_password":"p1$ecr3t","opening_balance":"0.00000"}
+    '''
+
     params = {}
-    params['i_account'] = acc_id
-    url = '{}/Account/terminate_account/{}/{}'.format(server, auth, params)
+    params['batch']             = "sipperftest"
+    params['gen_method']        = 'S'
+    params['gen_start_id']      = start_id # First acc number
+    params['gen_amount']        = number
+    params["activation_date"]   = datetime.now().strftime("%Y-%m-%d")
+    params["i_product"]         = i_product
+    params["i_customer"]        = i_cust
+    params["billing_model"]     = "1"
+    params["opening_balance"]   = "0.00000"
+    params["credit_limit"]      = "10.00000"
+    params["iso_4217"]          = currency
+    params["h323_password"]     = password
+
+    url = '{}/Account/generate_accounts/{}/{}'.format(server, auth, params)
     url = url.replace("'", '"').replace(" ", "")
     if pargs2.debug:
-        print 'Terminating account {}\n{}'.format(acc_id, url)
-    try:
+        print url
+    try:   
         page = urllib2.urlopen(url)
-        data = json.load(page)
-        if pargs2.debug:
-            print 'Terminated ', data
-        return True
+        data = json.load(page))
     except:
-        return False
+        print 'smth goes wrong - please check gen_accounts method'
+        sys.exit(1)
+    print "Generation result - {}".format(data)
 
+# ------------------------------------------------
+# Part of termination
 
 def term_customer(c_id):
     """terminating customer"""
@@ -286,10 +277,15 @@ if __name__ == "__main__":
         print 'i_customer.log created. Now --cleanup is possible.'
         
         print 'Accounts creation, please wait...'
-        acc_list = [str(999000330000 + i) for i in xrange(1, int(pargs.number_of_accounts))]
-        acc_list.insert(0, '999000330000')
-        for acc in acc_list:
-            add_account(acc, pargs.currency, pargs.account_password)
+        if pargs.mr45:
+            acc_list = [pargs.first_account_number + i) for i in xrange(1, int(pargs.number_of_accounts))]
+            acc_list.insert(0, pargs.first_account_number)
+            # Should we use account generator or not
+            for acc in acc_list:
+                add_account(acc, pargs.currency, pargs.account_password)
+        else:
+            # def gen_accounts(start_id, currency, password, number):
+            gen_accounts(pargs.first_account_number, pargs.number_of_accounts, pargs.currency, pargs.account_password)        
 
         with open(PATH_TO_CONFS + 'users_reg.csv', 'w') as reg_file:
             reg_file.write('SEQUENTIAL' + '\n') 
