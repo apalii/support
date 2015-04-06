@@ -4,7 +4,15 @@ __author__ = 'apalii'
 
 from create_accounts import MyArgs
 import sys
+import os
 
+
+# root-level privileges check
+if os.geteuid() !=0:
+    print "You need to have root privileges to run this script"
+    sys.exit(1)
+
+    
 def conf_reader():
     '''This simple function reads the config and 
        returns a dict with parameters for a class
@@ -34,7 +42,7 @@ def conf_reader():
                 else:
                     continue
         # All paremeter should be equeal to len of "valid" list 
-        if not len(valid) == len(params) - 1:
+        if not len(valid) == len(params):
             print "Some parameter is missing or extra exists.\nPlease check conf file"
             print valid
             print params
@@ -58,7 +66,7 @@ if __name__ == "__main__":
     # Globals
     PATH_TO_CONFS = '/home/porta-one/SIP_perf_test/csv/'
 
-    acc_list = [pargs.first_account_number + i) for i in xrange(1, int(pargs.number_of_accounts))]
+    acc_list = [str(int(pargs.first_account_number) + i) for i in xrange(1, int(pargs.number_of_accounts))]
     acc_list.insert(0, pargs.first_account_number)
 
     with open(PATH_TO_CONFS + 'users_reg.csv', 'w') as reg_file:

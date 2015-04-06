@@ -9,22 +9,23 @@ import json
 import time
 import urllib2
 from datetime import datetime
-try :
+try:
     import argparse
 except ImportError:
     print 'use python2.7 or install argparse module'
     sys.exit(1)
 
 # root-level privileges check
-if os.geteuid() !=0:
+if os.geteuid() != 0:
     print "You need to have root privileges to run this script"
     sys.exit(1)
 
-parser = argparse.ArgumentParser(description='Account Generator v.2.00')
+parser = argparse.ArgumentParser(description='Account Generator v.3')
 parser.add_argument("--debug", action='store_true',
                     help="shows a lot of additional information")
-parser.add_argument("--cleanup", action='store_true', help="Cleanup")
-# parser.add_argument("--mr45", action='store_true', help="For MR 45 and lower")
+parser.add_argument("--cleanup", action='store_true',
+                    help="Terminates customer")
+
 
 class MyArgs(object):
     '''This simple class just imitates an argsparse
@@ -33,23 +34,24 @@ class MyArgs(object):
     '''
 
     def __init__(self, **entries): 
-        self.__dict__.update(entries)  
+        self.__dict__.update(entries)
 
 
     def debug(self):
-        print("Parameters are the following :")
+        print "Parameters are the following :"
         for key, value in self.__dict__.items():
-            print("key : {:<20} value : {:<10}  {}".format(key, value, type(value)))
+            print("key : {:<20} value : {:<20}  {}".format(key,
+                                                           value,
+                                                           type(value)))
 
-            
 def conf_reader():
     '''This simple function reads the config and 
        returns a dict with parameters for a class
-    ''' 
+    '''
     config = '/home/porta-one/SIP_perf_test/etc/sipperftest.conf'
     params = {}
     pre_list = []
-    valid = ('server', 'login', 'password', 
+    valid = ('server', 'login', 'password',
              'environment', 'product',
              'number_of_accounts',
              'customer_name', 'first_account_number',
@@ -77,7 +79,7 @@ def conf_reader():
     else:
         print 'Error : there is no {} file !'.format(config)
         sys.exit(1)
-    # All paremeter should be equeal to len of "valid" list 
+    # All parameters should be equal to len of "valid" list
     if not len(valid) == len(params) - 1:
         print "Some parameter is missing or extra exists.\nPlease check conf file"
         print valid
@@ -104,9 +106,8 @@ if pargs2.debug:
 # ------------------------------------------------
 # Part of creation
 def auth_info():
-    """registration
-    :rtype : str
-    """
+    """registration :rtype : str"""
+
     if not pargs.mr45:
         url = server + '/Session/login/{"login":"' + login + '","password":"' + password + '"}'
     else:
@@ -138,11 +139,13 @@ def add_customer(cust_name, currency):
     params["customer_info"]["opening_balance"]  = "0.00000"
     params["customer_info"]["credit_limit"]     = "10.00000"
 
-    url = '{}/Customer/add_customer/{}/{}'.format(server, auth, params)
+    url = '{}/Customer/add_customer/{}/{}'.format(server,
+                                                  auth,
+                                                  params)
     url = url.replace("'", '"').replace(" ", "")
     if pargs2.debug:
         print url
-    try: 
+    try:
         page = urllib2.urlopen(url)
         data = json.load(page)
     except:
@@ -166,8 +169,8 @@ def get_i_product(product):
         print url
         print data
     try:
-        return data['product_list'][0]['i_product'].encode('utf-8')
         print "Successfully got i_product"
+        return data['product_list'][0]['i_product'].encode('utf-8')
     except:
         print "Can't find {} product.\nExiting...".format(product)
         print "Please correct 'product' parameter"
@@ -177,8 +180,9 @@ def get_i_product(product):
 def add_account(acc_id, currency, password):
     """add_account method"""
 
+    today = datetime.now().strftime("%Y-%m-%d")
     params = {"account_info":{}}
-    params["account_info"]["activation_date"]   = datetime.now().strftime("%Y-%m-%d")
+    params["account_info"]["activation_date"]   = today
     params["account_info"]["i_product"]         = i_product
     params["account_info"]["id"]                = acc_id
     params["account_info"]["i_customer"]        = i_cust
@@ -221,11 +225,13 @@ def gen_accounts(start_id, number, currency, password):
     params["iso_4217"]          = currency
     params["h323_password"]     = password
 
-    url = '{}/Account/generate_accounts/{}/{}'.format(server, auth, params)
+    url = '{}/Account/generate_accounts/{}/{}'.format(server,
+                                                      auth,
+                                                      params)
     url = url.replace("'", '"').replace(" ", "")
     if pargs2.debug:
         print url
-    try:   
+    try:
         page = urllib2.urlopen(url)
         data = json.load(page)
     except:
@@ -240,7 +246,9 @@ def term_customer(c_id):
     """terminating customer"""
     params = {}
     params['i_customer'] = c_id
-    url = '{}/Customer/terminate_customer/{}/{}'.format(server, auth, params)
+    url = '{}/Customer/terminate_customer/{}/{}'.format(server,
+                                                        auth,
+                                                        params)
     url = url.replace("'", '"').replace(" ", "")
     if pargs2.debug:
         print 'Terminating customer {}\n{}'.format(c_id, url)
@@ -278,10 +286,10 @@ if __name__ == "__main__":
             term_file.write('Do not remove this file'+ '\n')
             term_file.write(i_cust + '\n')
         print 'i_customer.log created. Now --cleanup is possible.'
-        
+
         print 'Accounts creation, please wait...'
-        
-        acc_list = [str(int(pargs.first_account_number + i) for i in xrange(1, int(pargs.number_of_accounts))]
+        acc_list = [str(int(pargs.first_account_number) + i)
+                    for i in xrange(1, int(pargs.number_of_accounts))]
         acc_list.insert(0, pargs.first_account_number)
         # Should we use account generator or not
         if not pargs.mr45:
@@ -289,12 +297,15 @@ if __name__ == "__main__":
                 add_account(acc, pargs.currency, pargs.account_password)
         else:
             # def gen_accounts(start_id, currency, password, number):
-            gen_accounts(pargs.first_account_number, pargs.number_of_accounts, pargs.currency, pargs.account_password)        
+            gen_accounts(pargs.first_account_number, pargs.number_of_accounts,
+                         pargs.currency, pargs.account_password)
 
         with open(PATH_TO_CONFS + 'users_reg.csv', 'w') as reg_file:
             reg_file.write('SEQUENTIAL' + '\n') 
             for acc in acc_list:
-                line = 'sipp;1;{a};[authentication username={a} password=p1$ecr3t]'.format(a=acc)
+                line = 'sipp;1;{a};[authentication username={a} password=p1$ecr3t]'.format(
+                    a=acc
+                )
                 reg_file.write(line + '\n')
         print 'users_reg.csv created'
 
@@ -302,7 +313,10 @@ if __name__ == "__main__":
             calls_file.write('SEQUENTIAL' + '\n')
             while len(acc_list):
                 caller, callee = acc_list.pop(), acc_list.pop()
-                line = '{a};[authentication username={a} password=p1$ecr3t];{b}'.format(a=caller, b=callee)
+                line = '{a};[authentication username={a} password=p1$ecr3t];{b}'.format(
+                    a=caller,
+                    b=callee
+                )
                 calls_file.write(line + '\n')
         print 'users_call.csv created'
         print 'Please perform SIP performance tests'
