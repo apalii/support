@@ -20,6 +20,8 @@ if os.geteuid() != 0:
     print "You need to have root privileges to run this script"
     sys.exit(1)
 
+BASE_DIR = os.path.dirname(os.path.dirname(__file__))
+
 parser = argparse.ArgumentParser(description='Account Generator v.3')
 parser.add_argument("--debug", action='store_true',
                     help="shows a lot of additional information")
@@ -48,7 +50,7 @@ def conf_reader():
     '''This simple function reads the config and 
        returns a dict with parameters for a class
     '''
-    config = '/home/porta-one/SIP_perf_test/etc/sipperftest.conf'
+    config = os.path.join(BASE_DIR, '/etc/gen_accounts.conf')
     params = {}
     pre_list = []
     valid = ('server', 'login', 'password',
@@ -268,7 +270,7 @@ if __name__ == "__main__":
     env       = pargs.environment
     login     = pargs.login
     password  = pargs.password
-    PATH_TO_CONFS = '/home/porta-one/SIP_perf_test/csv/'
+    PATH_TO_CONFS = os.path.join(BASE_DIR, '/csv/')
     PATH_TO_LOG   = '/porta_var/tmp/i_customer.log'
 
     if not pargs2.cleanup:
@@ -303,9 +305,7 @@ if __name__ == "__main__":
         with open(PATH_TO_CONFS + 'users_reg.csv', 'w') as reg_file:
             reg_file.write('SEQUENTIAL' + '\n') 
             for acc in acc_list:
-                line = 'sipp;1;{a};[authentication username={a} password=p1$ecr3t]'.format(
-                    a=acc
-                )
+                line = 'sipp;1;{a};[authentication username={a} password=p1$ecr3t]'.format(a=acc)
                 reg_file.write(line + '\n')
         print 'users_reg.csv created'
 
