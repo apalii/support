@@ -8,18 +8,18 @@ import os
 
 
 # root-level privileges check
-if os.geteuid() !=0:
+if os.geteuid() != 0:
     print "You need to have root privileges to run this script"
     sys.exit(1)
+BASE_DIR = os.getcwd()
 
-    
+
 def conf_reader():
     '''This simple function reads the config and 
        returns a dict with parameters for a class
     ''' 
-    config = '/home/porta-one/SIP_perf_test/etc/sipperftest.conf'
+    config = BASE_DIR + '/etc/gen_accounts.conf'
     params = {}
-    pre_list = []
     valid = ('server', 'login', 'password', 
              'environment', 'product',
              'number_of_accounts',
@@ -64,9 +64,10 @@ pargs = MyArgs(**dict_with_params)
 
 if __name__ == "__main__":
     # Globals
-    PATH_TO_CONFS = '/home/porta-one/SIP_perf_test/csv/'
+    PATH_TO_CONFS = BASE_DIR + '/csv/'
 
-    acc_list = [str(int(pargs.first_account_number) + i) for i in xrange(1, int(pargs.number_of_accounts))]
+    acc_list = [str(int(pargs.first_account_number) + i) 
+                for i in xrange(1, int(pargs.number_of_accounts))]
     acc_list.insert(0, pargs.first_account_number)
 
     with open(PATH_TO_CONFS + 'users_reg.csv', 'w') as reg_file:
@@ -80,7 +81,9 @@ if __name__ == "__main__":
         calls_file.write('SEQUENTIAL' + '\n')
         while len(acc_list):
             caller, callee = acc_list.pop(), acc_list.pop()
-            line = '{a};[authentication username={a} password=p1$ecr3t];{b}'.format(a=caller, b=callee)
+            line = '{a};[authentication username={a} password=p1$ecr3t];{b}'.format(
+                a=caller, 
+                b=callee)
             calls_file.write(line + '\n')
     print 'users_call.csv created'
     print 'Please perform SIP performance tests'

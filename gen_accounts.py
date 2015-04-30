@@ -20,8 +20,6 @@ if os.geteuid() != 0:
     print "You need to have root privileges to run this script"
     sys.exit(1)
 
-BASE_DIR = os.path.dirname(os.path.dirname(__file__))
-
 parser = argparse.ArgumentParser(description='Account Generator v.3')
 parser.add_argument("--debug", action='store_true',
                     help="shows a lot of additional information")
@@ -50,7 +48,7 @@ def conf_reader():
     '''This simple function reads the config and 
        returns a dict with parameters for a class
     '''
-    config = os.path.join(BASE_DIR, '/etc/gen_accounts.conf')
+    config = os.getcwd() + '/etc/gen_accounts.conf'
     params = {}
     pre_list = []
     valid = ('server', 'login', 'password',
@@ -214,18 +212,18 @@ def gen_accounts(start_id, number, currency, password):
     '''
 
     params = {}
-    params['batch']             = "sipperftest"
+    params['batch']             = "sipperftest" + str(int(time.time()))
     params['gen_method']        = 'S'
     params['gen_start_id']      = start_id # First acc number
     params['gen_amount']        = number
     params["activation_date"]   = datetime.now().strftime("%Y-%m-%d")
     params["i_product"]         = i_product
     params["i_customer"]        = i_cust
-    params["billing_model"]     = "1"
-    params["opening_balance"]   = "0.00000"
-    params["credit_limit"]      = "10.00000"
+    params["billing_model"]     = "-1"
+    params["opening_balance"]   = "3.00000"
+    #params["credit_limit"]     = "10.00000"
     params["iso_4217"]          = currency
-    params["h323_password"]     = password
+    params["gen_h323_method"]   = "empty"
 
     url = '{}/Account/generate_accounts/{}/{}'.format(server,
                                                       auth,
@@ -270,7 +268,7 @@ if __name__ == "__main__":
     env       = pargs.environment
     login     = pargs.login
     password  = pargs.password
-    PATH_TO_CONFS = os.path.join(BASE_DIR, '/csv/')
+    PATH_TO_CONFS = os.getcwd() +  '/csv/'
     PATH_TO_LOG   = '/porta_var/tmp/i_customer.log'
 
     if not pargs2.cleanup:
