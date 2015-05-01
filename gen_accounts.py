@@ -40,9 +40,9 @@ class MyArgs(object):
     def debug(self):
         print "Parameters are the following :"
         for key, value in self.__dict__.items():
-            print("key : {:<20} value : {:<20}  {}".format(key,
-                                                           value,
-                                                           type(value)))
+            print("{:<20} {:<20}  {}".format(key,value,type(value)))
+        print "\n"
+
 
 def conf_reader():
     '''This simple function reads the config and 
@@ -54,8 +54,7 @@ def conf_reader():
     valid = ('server', 'login', 'password',
              'environment', 'product',
              'number_of_accounts',
-             'customer_name', 'first_account_number',
-             'account_password', 'currency')
+             'customer_name', 'first_account_number',)
     if os.path.isfile(config):
         with open(config) as conf:
             for param in conf:
@@ -87,7 +86,7 @@ def conf_reader():
         sys.exit(1)
     if int(params['number_of_accounts']) % 2 != 0:
         print "Number of accounts should be even number"
-        print "Recheck number_of_accounts parameter in config file"
+        print "Recheck number_of_accounts parameter in the config file"
         sys.exit(1)
 
     return params
@@ -108,10 +107,17 @@ if pargs2.debug:
 def auth_info():
     """registration :rtype : str"""
 
-    if not pargs.mr45:
-        url = server + '/Session/login/{"login":"' + login + '","password":"' + password + '"}'
+    params = {}
+    params['password'] = password    
+    if pargs.login == 'soap-root':
+        params['user'] = 'soap-root'
     else:
-        url = server + '/Session/login/{}/{"login":"' + login + '","password":"' + password + '"}'
+        params['login'] = pargs.login   
+    if pargs.mr45:
+        url = server + '/Session/login/{}/' + '{}'.format(params)   
+    else:
+        url = server + '/Session/login/{}'.format(params) 
+    url = url.replace("'", '"').replace(" ", "")
     if pargs2.debug:
         print 'Request : ', url
     try:
@@ -169,15 +175,18 @@ def get_i_product(product):
         print url
         print data
     try:
-        print "Successfully got i_product"
-        return data['product_list'][0]['i_product'].encode('utf-8')
+        i_prod = data['product_list'][0]['i_product'].encode('utf-8')
+        pargs.currency = data['product_list'][0]['iso_4217'].encode('utf-8')
+        print "\nSuccessfully got i_product {} and currency {}\n".format(i_prod, 
+            pargs.currency) 
+        return i_prod
     except:
         print "Can't find {} product.\nExiting...".format(product)
         print "Please correct 'product' parameter"
         sys.exit(1)
 
 
-def add_account(acc_id, currency, password):
+def add_account(acc_id, currency):
     """add_account method"""
 
     today = datetime.now().strftime("%Y-%m-%d")
@@ -272,14 +281,13 @@ if __name__ == "__main__":
     PATH_TO_LOG   = '/porta_var/tmp/i_customer.log'
 
     if not pargs2.cleanup:
-        print 'Authentification, please wait...'
+        print 'Authentification, please wait...\n'
         auth      = auth_info()
         time.sleep(2)
-        print 'Cheking {} product...'.format(pargs.product)
+        print 'Cheking {} product...\n'.format(pargs.product)
         i_product = get_i_product(pargs.product)
         time.sleep(2)
-
-        print 'Customer creation, please wait...'
+        print 'Customer creation, please wait...\n'
         i_cust    = add_customer(pargs.customer_name, pargs.currency)
         time.sleep(2)
         with open(PATH_TO_LOG, 'w') as term_file:
@@ -294,11 +302,11 @@ if __name__ == "__main__":
         # Should we use account generator or not
         if not pargs.mr45:
             for acc in acc_list:
-                add_account(acc, pargs.currency, pargs.account_password)
+                add_account(acc, pargs.currency)
         else:
             # def gen_accounts(start_id, currency, password, number):
             gen_accounts(pargs.first_account_number, pargs.number_of_accounts,
-                         pargs.currency, pargs.account_password)
+                         pargs.currency)
 
         with open(PATH_TO_CONFS + 'users_reg.csv', 'w') as reg_file:
             reg_file.write('SEQUENTIAL' + '\n') 
