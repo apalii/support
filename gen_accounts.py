@@ -211,14 +211,7 @@ def add_account(acc_id, currency):
 
 
 def gen_accounts(start_id, number, currency, password):
-    '''Account generator method
-    Example of the request:   
-    https://192.168.197.100/rest/Account/generate_accounts/
-    {"i_env":"3","session_id":"3b936b79add6acab3749bced0e86f041"}
-    /{"batch":"sipperftest", "gen_method":"S","gen_start_id":"999000339000","gen_amount":"10",
-    "credit_limit":"10.00000","i_product":"3","iso_4217":"USD","activation_date":"2015-04-03",
-    "i_customer":"208","billing_model":"1","h323_password":"p1$ecr3t","opening_balance":"0.00000"}
-    '''
+    '''Account generator method'''
 
     params = {}
     params['batch']             = "sipperftest" + str(int(time.time()))
