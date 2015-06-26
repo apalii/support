@@ -18,8 +18,7 @@ except ImportError:
 
 # root-level privileges check
 if os.geteuid() != 0:
-    print "You need to have root privileges to run this script"
-    sys.exit(1)
+    sys.exit("You need to have root privileges to run this script")
 
 parser = argparse.ArgumentParser(description='Account Generator v.3')
 parser.add_argument("--debug", action='store_true',
