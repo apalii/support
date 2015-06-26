@@ -13,8 +13,7 @@ from lib.args import MyArgs
 try:
     import argparse
 except ImportError:
-    print 'use python2.7 or install argparse module'
-    sys.exit(1)
+    sys.exit('use python2.7 or install argparse module')
 
 # root-level privileges check
 if os.geteuid() != 0:
@@ -199,8 +198,7 @@ def gen_accounts(start_id, number, currency):
         page = urllib2.urlopen(url)
         data = json.load(page)
     except:
-        print 'smth goes wrong - please check gen_accounts method'
-        sys.exit(1)
+        sys.exit('please check gen_accounts method')
     print "Generation result - {}".format(data)
 
 # ------------------------------------------------
@@ -260,8 +258,7 @@ if __name__ == "__main__":
                          pargs.currency)
         else:
             print "There is no generate_account API method in current MR"
-            print "Use csv_generator.py instead."
-            sys.exit(1)
+            sys.exit("Use csv_generator.py instead.")
 
         with open(PATH_TO_CONFS + 'users_reg.csv', 'w') as reg_file:
             reg_file.write('SEQUENTIAL' + '\n')
