@@ -14,13 +14,11 @@ except:
 try:
     from gi.repository import Notify
 except ImportError:
-    print('Please install sudo apt-get install python3-gi')
-    sys.exit(1)
+    sys.exit('Please install sudo apt-get install python3-gi')
 try:
     import requests
 except ImportError:
-    print('Please install requests module')
-    sys.exit(1)
+    sys.exit('Please install requests module')
 
 
 parser = argparse.ArgumentParser(description='Ticket watcher beta',
